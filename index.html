@@ -210,7 +210,7 @@
     <div class="overhead-light"></div>
 
     <div id="ui-top">
-        <div class="hud-panel" style="border-color: var(--neon-blue);"><span class="hud-label" style="color: var(--neon-blue);">CARTEIRA:</span> $<span id="credits-label">99999</span></div>
+        <div class="hud-panel" style="border-color: var(--neon-blue);"><span class="hud-label" style="color: var(--neon-blue);">CARTEIRA:</span> $<span id="credits-label">1550</span></div>
         <div class="hud-panel"><span class="hud-label">MOTOR:</span> <span id="engine-status" class="offline">OFFLINE</span></div>
         <div class="hud-panel"><span class="hud-label">ÓLEO:</span> <span id="oil-counter">0 / 100%</span></div>
         <div class="hud-panel"><span class="hud-label">VELOCIDADE:</span> <span id="kmh-label">0</span> KM/H</div>
@@ -327,7 +327,7 @@ motorRealAudio.onended = () => {
 const canvas = document.getElementById('c'), ctx = canvas.getContext('2d');
 const GRAVITY = 0.5, FRICTION = 0.92, FLOOR_LEVEL = 580, MOUSE_PULL_STRENGTH = 0.15;
 const standPos = { x: 450, y: 250 };
-let tool = 'hand', engineReady = false, oilLevel = 0, credits = 99999, parts = [], draggedPart = null, mouseTargetPos = {x:0, y:0};
+let tool = 'hand', engineReady = false, oilLevel = 0, credits = 1550, parts = [], draggedPart = null, mouseTargetPos = {x:0, y:0};
 
 let speedTick = 0;
 let displayKmh = 0;
@@ -339,7 +339,7 @@ const shopCatalog = [
     { id: 'head', name: 'CABEÇOTE', price: 400, w: 180, h: 70, tx: standPos.x - 90, ty: standPos.y - 120, req: 'block', maxBolts: 4, speedPlus: 0, imgSrc: 'cabecote.png' },
     { id: 'pan', name: 'CÁRTER', price: 200, w: 160, h: 50, tx: standPos.x - 80, ty: standPos.y + 80, req: 'crank', maxBolts: 4, speedPlus: 0, imgSrc: 'carter.png' },
     { id: 'turbo', name: 'KIT TURBO', price: 600, w: 100, h: 100, tx: standPos.x + 80, ty: standPos.y - 80, req: 'head', maxBolts: 3, speedPlus: 40, imgSrc: 'turbo.png' },
-    { id: 'filter', name: 'FILTRO ESP.', price: 100, w: 70, h: 70, tx: standPos.x - 150, ty: standPos.y - 100, req: 'head', maxBolts: 1, speedPlus: 10, imgSrc: 'filtro esportivo.png' }
+    { id: 'filter', name: 'FILTRO ESP.', price: 300, w: 70, h: 70, tx: standPos.x - 150, ty: standPos.y - 100, req: 'head', maxBolts: 1, speedPlus: 10, imgSrc: 'filtro esportivo.png' }
 ];
 
 const images = {};
