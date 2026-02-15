@@ -29,7 +29,33 @@
             user-select: none;
         }
 
-        /* --- SHOP OVERLAY --- */
+        #tutorial-msg {
+            position: absolute; 
+            top: 100px;
+            background: var(--neon-blue); 
+            color: #000; 
+            padding: 12px 30px;
+            border-radius: 4px; 
+            font-weight: bold; 
+            z-index: 150; 
+            display: none;
+            box-shadow: 0 0 15px var(--neon-blue);
+            text-transform: uppercase;
+            border: 2px solid #fff;
+            text-align: center;
+            max-width: 80%;
+        }
+
+        .modal-overlay {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.9); z-index: 200; display: none;
+            flex-direction: column; align-items: center; justify-content: center;
+        }
+        .dialog-box {
+            background: var(--bg-panel); border: 2px solid var(--neon-orange);
+            padding: 30px; border-radius: 12px; width: 380px; text-align: center;
+        }
+
         #shop-overlay {
             position: absolute;
             top: 0; left: 0; width: 100%; height: 100%;
@@ -66,7 +92,6 @@
         }
         .shop-item button:disabled { color: #555; border-color: #555; cursor: not-allowed; }
 
-        /* --- HUD --- */
         #ui-top {
             width: 98%;
             display: flex;
@@ -96,7 +121,6 @@
         #engine-status.online { color: var(--neon-green); text-shadow: 0 0 10px var(--neon-green); }
         #engine-status.offline { color: #ff4444; text-shadow: 0 0 10px #ff0000; }
 
-        /* --- CANVAS --- */
         #canvas-container {
             flex-grow: 1;
             display: flex;
@@ -125,7 +149,6 @@
             z-index: 1;
         }
 
-        /* --- CONTROLS --- */
         #controls { 
             position: absolute;
             bottom: 0;
@@ -160,10 +183,34 @@
 </head>
 <body>
 
+    <div id="modal-welcome" class="modal-overlay" style="display: flex;">
+        <div class="dialog-box">
+            <h2>BEM-VINDO!</h2>
+            <p>Deseja ativar o tutorial de montagem?</p>
+            <div style="display: flex; gap: 10px; justify-content: center;">
+                <button class="control-btn" style="border-color: var(--neon-green); color: var(--neon-green);" onclick="startTutorial()">SIM</button>
+                <button class="control-btn" style="border-color: #ff4444; color: #ff4444;" onclick="showAreYouSure()">NÃO</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="modal-sure" class="modal-overlay">
+        <div class="dialog-box">
+            <h2>TEM CERTEZA?</h2>
+            <p>Você terá que montar o motor sem ajuda.</p>
+            <div style="display: flex; gap: 10px; justify-content: center;">
+                <button class="control-btn" style="border-color: #ff4444; color: #ff4444;" onclick="closeAllModals(true)">SIM, TENHO CERTEZA</button>
+                <button class="control-btn" style="border-color: var(--neon-green); color: var(--neon-green);" onclick="backToWelcome()">NÃO, VOLTAR</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="tutorial-msg"></div>
+
     <div class="overhead-light"></div>
 
     <div id="ui-top">
-        <div class="hud-panel" style="border-color: var(--neon-blue);"><span class="hud-label" style="color: var(--neon-blue);">CARTEIRA:</span> $<span id="credits-label">1400</span></div>
+        <div class="hud-panel" style="border-color: var(--neon-blue);"><span class="hud-label" style="color: var(--neon-blue);">CARTEIRA:</span> $<span id="credits-label">99999</span></div>
         <div class="hud-panel"><span class="hud-label">MOTOR:</span> <span id="engine-status" class="offline">OFFLINE</span></div>
         <div class="hud-panel"><span class="hud-label">ÓLEO:</span> <span id="oil-counter">0 / 100%</span></div>
         <div class="hud-panel"><span class="hud-label">VELOCIDADE:</span> <span id="kmh-label">0</span> KM/H</div>
@@ -186,11 +233,62 @@
         <button id="btn-hand" class="control-btn active-tool" onclick="setTool('hand')"><span>🖐️</span> Arrastar</button>
         <button id="btn-wrench" class="control-btn" onclick="setTool('wrench')"><span>🔧</span> Chave</button>
         <button id="btn-oil" class="control-btn" onclick="setTool('oil')"><span>🛢️</span> Óleo</button>
-        <button id="btn-ign" class="control-btn btn-action" onclick="attemptIgnition()" disabled><span>🔑</span> Ignição</button>
+        <button id="btn-ign" class="control-btn btn-action" onclick="handleIgnitionClick()"><span>🔑</span> Ignição</button>
         <button id="btn-sell" class="control-btn btn-sell" onclick="sellEngine()" disabled><span>💰</span> Vender</button>
     </div>
 
 <script>
+let tutorialActive = false;
+let tutorialStep = 0;
+const tutOrder = ['block', 'piston', 'crank', 'head', 'pan'];
+
+function startTutorial() { tutorialActive = true; closeAllModals(false); updateTut(); }
+function showAreYouSure() { document.getElementById('modal-welcome').style.display='none'; document.getElementById('modal-sure').style.display='flex'; }
+function backToWelcome() { document.getElementById('modal-sure').style.display='none'; document.getElementById('modal-welcome').style.display='flex'; }
+function closeAllModals(save) { 
+    document.querySelectorAll('.modal-overlay').forEach(m => m.style.display='none');
+}
+
+function updateTut(customMsg = null) {
+    if(!tutorialActive && !customMsg) return;
+    const msg = document.getElementById('tutorial-msg');
+    msg.style.display = 'block';
+
+    if(customMsg) {
+        msg.innerText = customMsg;
+        msg.style.background = "#ff4444";
+        setTimeout(() => { 
+            msg.style.background = "var(--neon-blue)"; 
+            if(!tutorialActive) msg.style.display = "none";
+            else updateTut();
+        }, 3000);
+        return;
+    }
+
+    const currentPartId = tutOrder[tutorialStep];
+    const shopItem = shopCatalog.find(p=>p.id===currentPartId);
+
+    if(tutorialStep < tutOrder.length && !parts.find(p=>p.id===currentPartId)) {
+        msg.innerText = "PASSO: Compre o " + shopItem.name + " na loja";
+    } 
+    else if (parts.some(p=>!p.installed)) {
+        msg.innerText = "PASSO: Arraste a peça para a marca vermelha. A anterior deve estar 100% PARAFUSADA!";
+    } 
+    else if (parts.some(p=>p.installed && p.bolts < p.maxBolts)) {
+        msg.innerText = "IMPORTANTE: Use a CHAVE para apertar os parafusos. Isso libera a próxima peça!";
+    }
+    else if (oilLevel < 100) {
+        msg.innerText = "PASSO: Use o ÓLEO até 100% para o motor não quebrar!";
+    } 
+    else if (!engineReady) {
+        msg.innerText = "FINAL: Agora clique em IGNIÇÃO para testar seu motor!";
+    } 
+    else {
+        msg.innerText = "MOTOR PRONTO! Clique em VENDER!";
+        setTimeout(()=> { if(tutorialActive) msg.style.display='none'; }, 8000);
+    }
+}
+
 const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
 function playSynthSound(type) {
     if (audioCtx.state === 'suspended') audioCtx.resume();
@@ -205,24 +303,47 @@ function playSynthSound(type) {
             osc.type = 'square'; osc.frequency.setValueAtTime(1200, now); gainNode.gain.setValueAtTime(0.05, now);
             osc.frequency.exponentialRampToValueAtTime(100, now + 0.05); osc.start(now); osc.stop(now + 0.05); break;
         case 'oil': osc.type = 'sine'; osc.frequency.setValueAtTime(300, now); gainNode.gain.setValueAtTime(0.1, now); osc.start(now); osc.stop(now + 0.2); break;
-        case 'ignition': osc.type = 'sawtooth'; osc.frequency.setValueAtTime(60, now); osc.frequency.linearRampToValueAtTime(300, now + 1.5); gainNode.gain.setValueAtTime(0.1, now); osc.start(now); osc.stop(now + 1.5); break;
         case 'money': osc.type = 'sine'; osc.frequency.setValueAtTime(900, now); gainNode.gain.setValueAtTime(0.1, now); osc.start(now); osc.stop(now + 0.1); break;
+        case 'explosion': 
+            osc.type = 'sawtooth'; osc.frequency.setValueAtTime(150, now); gainNode.gain.setValueAtTime(0.3, now);
+            osc.frequency.exponentialRampToValueAtTime(40, now + 0.5); gainNode.gain.linearRampToValueAtTime(0, now + 0.5);
+            osc.start(now); osc.stop(now + 0.5); break;
     }
 }
+
+const motorRealAudio = new Audio('car-engine.mp3');
+motorRealAudio.loop = false;
+motorRealAudio.volume = 0.2;
+
+motorRealAudio.onended = () => {
+    engineReady = false;
+    displayKmh = 0;
+    document.getElementById('kmh-label').innerText = "0";
+    document.getElementById('engine-status').innerText = "OFFLINE";
+    document.getElementById('engine-status').className = "offline";
+    checkEngineStatus();
+};
 
 const canvas = document.getElementById('c'), ctx = canvas.getContext('2d');
 const GRAVITY = 0.5, FRICTION = 0.92, FLOOR_LEVEL = 580, MOUSE_PULL_STRENGTH = 0.15;
 const standPos = { x: 450, y: 250 };
-let tool = 'hand', engineReady = false, oilLevel = 0, credits = 1400, parts = [], draggedPart = null, mouseTargetPos = {x:0, y:0};
+let tool = 'hand', engineReady = false, oilLevel = 0, credits = 99999, parts = [], draggedPart = null, mouseTargetPos = {x:0, y:0};
+
+let speedTick = 0;
+let displayKmh = 0;
 
 const shopCatalog = [
-    { id: 'block', name: 'BLOCO', price: 500, w: 140, h: 110, color: '#9da5b4', stroke:'#2b2b2b', tx: standPos.x - 70, ty: standPos.y - 50, req: null, maxBolts: 4, speedPlus: 0 },
-    { id: 'crank', name: 'VIRAQUIM', price: 300, w: 120, h: 30, color: '#3a4a63', stroke:'#1a1a2e', tx: standPos.x - 60, ty: standPos.y + 40, req: 'block', maxBolts: 2, speedPlus: 0 },
-    { id: 'head', name: 'CABEÇOTE', price: 400, w: 150, h: 50, color: '#c92a2a', stroke:'#7c1a1a', tx: standPos.x - 75, ty: standPos.y - 100, req: 'block', maxBolts: 4, speedPlus: 0 },
-    { id: 'pan', name: 'CÁRTER', price: 200, w: 130, h: 40, color: '#1a1a1a', stroke:'#000', tx: standPos.x - 65, ty: standPos.y + 80, req: 'crank', maxBolts: 4, speedPlus: 0 },
-    { id: 'turbo', name: 'KIT TURBO', price: 1200, w: 70, h: 70, color: '#00eaff', stroke:'#005a8d', tx: standPos.x + 80, ty: standPos.y - 60, req: 'head', maxBolts: 3, speedPlus: 30 },
-    { id: 'inter', name: 'INTERCOOLER', price: 800, w: 120, h: 45, color: '#5555ff', stroke:'#111155', tx: standPos.x - 60, ty: standPos.y - 160, req: 'turbo', maxBolts: 2, speedPlus: 20 }
+    { id: 'block', name: 'BLOCO', price: 500, w: 180, h: 140, tx: standPos.x - 90, ty: standPos.y - 65, req: null, maxBolts: 4, speedPlus: 0, imgSrc: 'bloco do motor.png' },
+    { id: 'piston', name: 'PISTÃO', price: 150, w: 60, h: 80, tx: standPos.x - 30, ty: standPos.y - 30, req: 'block', maxBolts: 2, speedPlus: 5, imgSrc: 'pistão.png' },
+    { id: 'crank', name: 'VIRAQUIM', price: 300, w: 160, h: 45, tx: standPos.x - 80, ty: standPos.y + 40, req: 'piston', maxBolts: 2, speedPlus: 0, imgSrc: 'virabrequin.png' },
+    { id: 'head', name: 'CABEÇOTE', price: 400, w: 180, h: 70, tx: standPos.x - 90, ty: standPos.y - 120, req: 'block', maxBolts: 4, speedPlus: 0, imgSrc: 'cabecote.png' },
+    { id: 'pan', name: 'CÁRTER', price: 200, w: 160, h: 50, tx: standPos.x - 80, ty: standPos.y + 80, req: 'crank', maxBolts: 4, speedPlus: 0, imgSrc: 'carter.png' },
+    { id: 'turbo', name: 'KIT TURBO', price: 600, w: 100, h: 100, tx: standPos.x + 80, ty: standPos.y - 80, req: 'head', maxBolts: 3, speedPlus: 40, imgSrc: 'turbo.png' },
+    { id: 'filter', name: 'FILTRO ESP.', price: 100, w: 70, h: 70, tx: standPos.x - 150, ty: standPos.y - 100, req: 'head', maxBolts: 1, speedPlus: 10, imgSrc: 'filtro esportivo.png' }
 ];
+
+const images = {};
+shopCatalog.forEach(p => { images[p.id] = new Image(); images[p.id].src = p.imgSrc; });
 
 function toggleShop() {
     const s = document.getElementById('shop-overlay');
@@ -243,9 +364,11 @@ function renderShop() {
 function buyPart(id) {
     const item = shopCatalog.find(i => i.id === id);
     if (credits >= item.price) {
-        credits -= item.price; document.getElementById('credits-label').innerText = credits;
+        credits -= item.price; 
+        document.getElementById('credits-label').innerText = credits;
         parts.push({ ...item, x: 50 + Math.random()*200, y: -50, vx: 0, vy: 0, bolts: 0, installed: false });
         playSynthSound('install'); renderShop();
+        if(tutorialActive && id === tutOrder[tutorialStep]) { tutorialStep++; updateTut(); }
     }
 }
 
@@ -253,25 +376,17 @@ function sellEngine() {
     let value = parts.reduce((acc, p) => acc + p.price, 0);
     credits += Math.floor(value * 1.5); 
     document.getElementById('credits-label').innerText = credits;
-    
-    parts = []; 
-    engineReady = false; 
-    oilLevel = 0;
-    
+    parts = []; engineReady = false; oilLevel = 0;
+    motorRealAudio.pause(); motorRealAudio.currentTime = 0;
     document.getElementById('engine-status').innerText = "OFFLINE";
     document.getElementById('engine-status').className = "offline";
     document.getElementById('oil-counter').innerText = "0 / 100%";
     document.getElementById('kmh-label').innerText = "0";
-    
-    playSynthSound('money'); 
-    checkEngineStatus();
+    playSynthSound('money'); checkEngineStatus();
+    tutorialStep = 0; updateTut();
 }
 
-function loop() {
-    updatePhysics();
-    draw();
-    requestAnimationFrame(loop);
-}
+function loop() { updatePhysics(); draw(); requestAnimationFrame(loop); }
 
 function updatePhysics() {
     parts.forEach(p => {
@@ -291,27 +406,44 @@ function updatePhysics() {
 function draw() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     
-    const next = parts.find(p => !p.installed && (!p.req || parts.find(r => r.id === p.req && r.installed)));
+    const next = parts.find(p => !p.installed && (!p.req || parts.find(r => r.id === p.req && r.installed && r.bolts === r.maxBolts)));
     if (next) {
-        const isNear = Math.hypot(next.x - next.tx, next.y - next.ty) < 60;
+        const isNear = Math.hypot(next.x - next.tx, next.y - next.ty) < 110;
         ctx.save();
         ctx.strokeStyle = isNear ? '#00ff00' : '#ff0000';
-        ctx.lineWidth = 3; ctx.setLineDash([5, 5]);
+        ctx.lineWidth = 4; ctx.setLineDash([8, 4]);
         ctx.strokeRect(next.tx, next.ty, next.w, next.h);
         ctx.restore();
     }
 
     ctx.strokeStyle = 'rgba(0, 234, 255, 0.6)'; ctx.lineWidth = 3; ctx.strokeRect(standPos.x - 90, standPos.y + 130, 180, 20);
 
-    parts.forEach(p => {
+    const sortedParts = [...parts].sort((a, b) => {
+        if (a === draggedPart) return 1;
+        if (b === draggedPart) return -1;
+        return (a.installed === b.installed) ? 0 : (a.installed ? -1 : 1);
+    });
+
+    sortedParts.forEach(p => {
         ctx.save();
-        const grad = ctx.createLinearGradient(p.x, p.y, p.x, p.y + p.h);
-        grad.addColorStop(0, p.color); grad.addColorStop(1, p.stroke);
-        ctx.fillStyle = grad;
-        ctx.strokeStyle = p.installed ? (p.bolts === p.maxBolts ? '#00ff00' : '#ff8c00') : p.stroke;
-        ctx.lineWidth = 2; ctx.fillRect(p.x, p.y, p.w, p.h); ctx.strokeRect(p.x, p.y, p.w, p.h);
+        if (images[p.id].complete) {
+            ctx.drawImage(images[p.id], p.x, p.y, p.w, p.h);
+        } else {
+            ctx.fillStyle = '#444'; ctx.fillRect(p.x, p.y, p.w, p.h);
+        }
+
+        if (p === draggedPart) {
+            ctx.strokeStyle = '#fff'; ctx.lineWidth = 4;
+            ctx.strokeRect(p.x, p.y, p.w, p.h);
+        } else {
+            ctx.strokeStyle = p.installed ? (p.bolts === p.maxBolts ? '#00ff00' : '#ff8c00') : '#222';
+            ctx.lineWidth = 2;
+            ctx.strokeRect(p.x, p.y, p.w, p.h);
+        }
+        
         ctx.fillStyle = 'white'; ctx.font = 'bold 12px sans-serif'; ctx.textAlign = 'center';
         ctx.fillText(p.name, p.x + p.w / 2, p.y - 10);
+
         if(p.installed) {
             for(let i=1; i<=p.maxBolts; i++) {
                 ctx.beginPath(); ctx.arc(p.x + (p.w/(p.maxBolts+1)*i), p.y + p.h - 10, 5, 0, Math.PI*2);
@@ -322,18 +454,13 @@ function draw() {
     });
 
     if(engineReady) {
-        // Velocidade base de 60 KM/h + bônus das peças
-        let bonusSpeed = 0;
-        parts.forEach(p => {
-            if(p.installed) bonusSpeed += p.speedPlus;
-        });
-        let maxKmh = 60 + bonusSpeed;
-        // Oscilação natural do motor ligado
-        let jitter = (Math.random() * 2) - 1;
-        let finalKmh = maxKmh + jitter;
-        document.getElementById('kmh-label').innerText = Math.floor(finalKmh);
-    } else {
-        document.getElementById('kmh-label').innerText = "0";
+        speedTick++;
+        if(speedTick >= 10) {
+            let bonus = parts.filter(p => p.installed).reduce((acc, p) => acc + p.speedPlus, 0);
+            displayKmh = Math.floor((60 + bonus) + (Math.random() * 2) - 1);
+            speedTick = 0;
+            document.getElementById('kmh-label').innerText = displayKmh;
+        }
     }
 }
 
@@ -346,13 +473,13 @@ canvas.addEventListener('mousedown', (e) => {
     } else if (tool === 'wrench') {
         parts.forEach(p => {
             if(p.installed && p.bolts < p.maxBolts && mx > p.x && mx < p.x+p.w && my > p.y && my < p.y+p.h) {
-                p.bolts++; playSynthSound('wrench'); checkEngineStatus();
+                p.bolts++; playSynthSound('wrench'); checkEngineStatus(); updateTut();
             }
         });
     } else if (tool === 'oil') {
         oilLevel = Math.min(oilLevel + 5, 100); playSynthSound('oil');
         document.getElementById('oil-counter').innerText = oilLevel + " / 100%";
-        checkEngineStatus();
+        checkEngineStatus(); updateTut();
     }
 });
 
@@ -364,10 +491,14 @@ canvas.addEventListener('mousemove', (e) => {
 canvas.addEventListener('mouseup', () => {
     if (draggedPart) {
         const dist = Math.hypot(draggedPart.x - draggedPart.tx, draggedPart.y - draggedPart.ty);
-        const dep = !draggedPart.req || parts.find(p => p.id === draggedPart.req && p.installed);
-        if (dist < 50 && dep) {
+        const depPart = parts.find(p => p.id === draggedPart.req);
+        const dep = !draggedPart.req || (depPart && depPart.installed && depPart.bolts === depPart.maxBolts);
+        
+        if (dist < 110 && dep) { 
             draggedPart.x = draggedPart.tx; draggedPart.y = draggedPart.ty;
+            draggedPart.vx = 0; draggedPart.vy = 0;
             draggedPart.installed = true; playSynthSound('install');
+            updateTut();
         }
         draggedPart = null; checkEngineStatus();
     }
@@ -380,26 +511,66 @@ function setTool(t) {
 }
 
 function checkEngineStatus() {
-    const coreIds = ['block', 'crank', 'head', 'pan'];
+    const coreIds = ['block', 'piston', 'crank', 'head', 'pan'];
     const coresDone = coreIds.every(id => {
         const p = parts.find(part => part.id === id);
         return p && p.installed && p.bolts === p.maxBolts;
     });
     const extrasDone = parts.filter(p => !coreIds.includes(p.id)).every(p => p.installed && p.bolts === p.maxBolts);
-    const readyToIgnite = (coresDone && extrasDone && oilLevel === 100);
+    const readyToIgnite = (coresDone && extrasDone);
     
     document.getElementById('btn-ign').disabled = !readyToIgnite || engineReady;
     document.getElementById('btn-sell').disabled = !engineReady;
+    return readyToIgnite;
+}
+
+// LOGICA DE IGNICAO COM EVENTO DE QUEBRA
+function handleIgnitionClick() {
+    // Verifica se tem alguma peça instalada com parafusos faltando
+    const parafusosSoltos = parts.some(p => p.installed && p.bolts < p.maxBolts);
+
+    if (parafusosSoltos) {
+        explodeEngine();
+        return;
+    }
+
+    if (oilLevel < 100) {
+        updateTut("PERIGO: O motor vai quebrar! Coloque 100% de ÓLEO antes de ligar!");
+        return;
+    }
+
+    attemptIgnition();
+}
+
+function explodeEngine() {
+    playSynthSound('explosion');
+    updateTut("CABOOM! O motor explodiu! Parafusos estavam soltos!");
+    
+    oilLevel = 0;
+    document.getElementById('oil-counter').innerText = "0 / 100%";
+
+    parts.forEach(p => {
+        if (p.installed) {
+            p.installed = false;
+            p.bolts = 0; 
+            p.vx = (Math.random() - 0.5) * 40;
+            p.vy = -Math.random() * 30;
+        }
+    });
+
+    engineReady = false;
+    document.getElementById('engine-status').innerText = "QUEBRADO";
+    document.getElementById('engine-status').className = "offline";
+    checkEngineStatus();
 }
 
 function attemptIgnition() {
-    playSynthSound('ignition');
-    setTimeout(() => {
-        engineReady = true;
-        document.getElementById('engine-status').innerText = "ONLINE";
-        document.getElementById('engine-status').className = "online";
-        checkEngineStatus();
-    }, 1500);
+    motorRealAudio.currentTime = 0;
+    motorRealAudio.play().catch(e => console.log("Erro áudio."));
+    engineReady = true;
+    document.getElementById('engine-status').innerText = "ONLINE";
+    document.getElementById('engine-status').className = "online";
+    checkEngineStatus(); updateTut();
 }
 
 loop();
